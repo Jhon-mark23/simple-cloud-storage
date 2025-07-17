@@ -9,15 +9,15 @@
 <body>
     <div class="container">
         <h1>File Storage</h1>
-        
+
         <div class="upload-section">
             <h2>Upload File</h2>
-            <form id="uploadForm">
-                <input type="file" id="fileInput" required>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" id="fileInput" name="file" required>
                 <button type="submit">Upload</button>
             </form>
         </div>
-        
+
         <div class="file-list">
             <h2>Your Files</h2>
             <div id="filesContainer">
@@ -34,14 +34,13 @@
             try {
                 const response = await fetch('/files');
                 const files = await response.json();
-                
+
                 const container = document.getElementById('filesContainer');
-                
-                if (files.length === 0) {
+                if (!files.length) {
                     container.innerHTML = '<p>No files uploaded yet.</p>';
                     return;
                 }
-                
+
                 container.innerHTML = files.map(file => `
                     <div class="file-item">
                         <span>${file}</span>
@@ -55,37 +54,32 @@
             }
         }
 
-        function handleUpload(e) {
+        async function handleUpload(e) {
             e.preventDefault();
-            
+
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
-            
             if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = async function(event) {
-                try {
-                    const response = await fetch('/upload', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `fileData=${encodeURIComponent(event.target.result)}&fileName=${encodeURIComponent(file.name)}`
-                    });
-                    
-                    if (response.ok) {
-                        loadFiles();
-                        fileInput.value = '';
-                    } else {
-                        alert('Upload failed');
-                    }
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    alert('Upload error');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    fileInput.value = '';
+                    loadFiles();
+                } else {
+                    alert('Upload failed');
                 }
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload error');
+            }
         }
     </script>
 </body>

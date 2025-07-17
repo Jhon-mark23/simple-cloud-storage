@@ -1,58 +1,66 @@
 const express = require('express');
-const fs = require('fs');
+const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const { exec } = require('child_process');
+
 const app = express();
-
-// __dirname is built-in with CommonJS
 const PORT = process.env.PORT || 3000;
-const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
+const __dirnameResolved = path.resolve();
+const UPLOAD_DIR = path.join(__dirnameResolved, 'public', 'uploads');
 
-// Middleware
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json()); // Allow JSON body
+// Ensure upload directory exists
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-// Ensure the upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
+// Security headers
+app.use((req, res, next) => {
+    res.setHeader("Content-Security-Policy", "default-src 'self'");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    next();
+});
 
-// Route to list uploaded files
+// Serve static files
+app.use(express.static(path.join(__dirnameResolved, 'public')));
+app.use('/uploads', express.static(UPLOAD_DIR));
+
+// Configure multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    filename: (req, file, cb) => {
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+        cb(null, `${Date.now()}-${safeName}`);
+    }
+});
+
+// Accept all file types and remove size limits
+const upload = multer({
+    storage,
+    limits: { fileSize: Infinity }
+});
+
+// Upload route
+app.post('/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).send('No file uploaded.');
+    res.redirect('/');
+});
+
+// File list route
 app.get('/files', (req, res) => {
     fs.readdir(UPLOAD_DIR, (err, files) => {
         if (err) {
-            console.error('Error reading directory:', err);
-            return res.status(500).json({ error: 'Error reading files' });
+            console.error('❌ Error reading upload directory:', err);
+            return res.status(500).json({ error: 'Failed to read files' });
         }
         res.json(files);
     });
 });
 
-// Route to upload a file (base64)
-app.post('/upload', (req, res) => {
-    const { fileData, fileName } = req.body;
-
-    if (!fileData || !fileName) {
-        return res.status(400).send('Missing file data or filename');
-    }
-
-    const safeFileName = path.basename(fileName);
-    const filePath = path.join(UPLOAD_DIR, safeFileName);
-    const base64Data = fileData.replace(/^data:.+;base64,/, '');
-
-    fs.writeFile(filePath, base64Data, 'base64', (err) => {
-        if (err) {
-            console.error('Error saving file:', err);
-            return res.status(500).send('Error saving file');
-        }
-        res.redirect('/');
-    });
-});
-
-// Route to download a file
+// Download route
 app.get('/download/:filename', (req, res) => {
-    const fileName = path.basename(req.params.filename);
-    const filePath = path.join(UPLOAD_DIR, fileName);
+    const safeName = path.basename(req.params.filename);
+    const filePath = path.join(UPLOAD_DIR, safeName);
 
     if (fs.existsSync(filePath)) {
         res.download(filePath);
@@ -61,7 +69,21 @@ app.get('/download/:filename', (req, res) => {
     }
 });
 
-// Start the server
+// Start server
 app.listen(PORT, () => {
-    console.log(`✅ Server running at http://localhost:${PORT}`);
+    console.log(`✅ Server is running at http://localhost:${PORT}`);
+
+    // Automatically start cloudflared tunnel
+    exec('cloudflared tunnel run my-tunnel', (error, stdout, stderr) => {
+        if (error) {
+            console.error('❌ Cloudflared failed:', error.message);
+        } else {
+            console.log('🌐 Cloudflared tunnel started successfully');
+            console.log(stdout);
+        }
+
+        if (stderr) {
+            console.error(stderr);
+        }
+    });
 });
