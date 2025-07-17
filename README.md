@@ -96,13 +96,7 @@ This project sets basic HTTP security headers, but it is not intended for produc
 
 
 ---
-
-📃 License
-
-MIT — Free for any use.
-
-
+CREATED: MARK MARTINEZ 
 ---
 
-Would you like me to generate a sample index.html for file uploading too?
 
