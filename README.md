@@ -42,8 +42,12 @@ cloudflared (for public tunnel)
 ⚙️ Installation & Usage
 
 # 1. Clone the repository
-git clone https://github.com/yourusername/unlimited-uploader
-cd unlimited-uploader
+```git
+git clone https://github.com/Jhon-mark23/simple-cloud-storage.git
+```
+```bash
+cd simple-cloud-storage
+```
 
 # 2. Install dependencies
 npm install
@@ -53,8 +57,9 @@ cloudflared tunnel create my-tunnel
 cloudflared tunnel route dns yourdomain.com my-tunnel
 
 # 4. Run the server
+```node
 node index.js
-
+````
 > ℹ️ cloudflared tunnel run my-tunnel is auto-started when index.js runs
 
 
