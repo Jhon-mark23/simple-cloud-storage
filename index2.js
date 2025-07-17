@@ -5,7 +5,7 @@ const fs = require('fs');
 const { exec } = require('child_process');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const __dirnameResolved = path.resolve();
 const UPLOAD_DIR = path.join(__dirnameResolved, 'public', 'uploads');
 
