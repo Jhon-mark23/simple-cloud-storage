@@ -1,5 +1,19 @@
 medyo tinatamad ako mag gawa ng readme.md
 
+setup first the cloudflare 
+1. Sign up in cloudflare
+
+2. open termux and paste this command
+   ```bash
+   pkg install cloudflared -y
+   ```
+3. paste this command in termux to login cloudflare 
+```bash
+cloudflared tunnel login
+```
+
+4.
+
 ---
 
 📂 Unlimited File Upload Server with Cloudflare Tunnel
