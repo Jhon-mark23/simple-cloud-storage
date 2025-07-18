@@ -3,18 +3,63 @@ medyo tinatamad ako mag gawa ng readme.md
 setup first the cloudflare 
 1. Sign up in cloudflare
 
-2. open termux and paste this command
-   ```bash
+2. open termux and paste this command ```bash
    pkg install cloudflared -y
-   ```
+```
 3. paste this command in termux to login cloudflare 
 ```bash
 cloudflared tunnel login
 ```
 
-4.
+4. Create A Named tunnel
+   example: my-tunnel
+```bash
+cloudflared tunnel create my-tunnel
+```
+
+5. Create a config file (`~/.cloudflared/config.yml`):
+```yaml
+tunnel: my-tunnel
+credentials-file: /path/to/credentials.json  # From the previous step
+
+# Define what traffic to forward
+ingress:
+  # Example 1: Expose SSH (TCP)
+  - hostname: ssh.yourdomain.com
+    service: tcp://localhost:22  # Forward SSH (port 22)
+
+  # Example 2: Expose a web app (HTTP)
+  - hostname: app.yourdomain.com
+    service: http://localhost:3000  # Forward HTTP (e.g., Node.js)
+
+  # Catch-all rule (optional)
+  - service: http_status:404  # Block unmatched requests
+```
+Replace `yourdomain.com` with your actual domain.
+
 
 ---
+
+6. Route DNS to the Tunnel
+Link your subdomain to the tunnel:
+```bash
+cloudflared tunnel route dns my-tunnel ssh.yourdomain.com
+cloudflared tunnel route dns my-tunnel app.yourdomain.com
+```
+This creates **CNAME records** in Cloudflare DNS.
+
+7.Run the Tunnel
+Start the tunnel:
+```bash
+cloudflared tunnel run my-tunnel
+```
+
+8.Access Your Service
+**Web Access (if configured):**  
+  Visit `https://app.yourdomain.com` in a browser.
+
+---
+
 
 📂 Unlimited File Upload Server with Cloudflare Tunnel
 
